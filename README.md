@@ -1,6 +1,6 @@
-# Celoria Facture — V1
+# Celoria Facture
 
-Première version fonctionnelle du questionnaire d’orientation sur la réforme française de la facturation électronique.
+Diagnostic d’orientation sur la réforme française de la facturation électronique et recommandation facultative de solutions adaptées.
 
 ## Lancer en local
 
@@ -10,6 +10,14 @@ npm run dev
 ```
 
 Puis ouvrir `http://localhost:3000`.
+
+## Organisation Git
+
+- `main` contient uniquement la version stable déployée en production.
+- `develop` contient la prochaine version en préparation.
+- chaque évolution est développée dans une branche `feature/nom-court`, créée depuis `develop`.
+
+Le fonctionnement complet est décrit dans [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Important
 
