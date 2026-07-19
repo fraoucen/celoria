@@ -935,258 +935,267 @@ function Result({
   onHome,
 }) {
   const result = calculateResult(answers);
-  const [showAnswers, setShowAnswers] = useState(false);
+  const [resultStep, setResultStep] = useState(0);
   const [emailOpen, setEmailOpen] = useState(false);
   const [feedback, setFeedback] = useState(null);
+  const resultSteps = ["Réponse", "Dates", "Action 1", "Action 2", "Action 3", "Terminé"];
+  const nextLabels = [
+    "Voir mes dates",
+    "Voir ce que je dois faire",
+    "Action suivante",
+    "Action suivante",
+    "Terminer ma feuille de route",
+  ];
 
-  const answerLabels = useMemo(() => {
-    const lookup = (options, value) => options.find((item) => item.value === value)?.title;
-    return [
-      ["Activité", lookup(PROFILE_OPTIONS, answers.profile)],
-      ["Adresse officielle", lookup(LOCATION_OPTIONS, answers.location)],
-      ["Taille", lookup(EMPLOYEE_OPTIONS, answers.employees)],
-      [
-        "Clients",
-        answers.clients
-          .map((value) => lookup(CLIENT_OPTIONS, value))
-          .filter(Boolean)
-          .join(", "),
-      ],
-      ["Facturation", lookup(ACTIVITY_OPTIONS, answers.activity)],
-      ["TVA", lookup(VAT_OPTIONS, answers.vat)],
-    ];
-  }, [answers]);
+  const goBack = () => {
+    if (resultStep === 0) onEdit();
+    else setResultStep((current) => current - 1);
+  };
+
+  const goNext = () => {
+    if (resultStep < resultSteps.length - 1) {
+      setResultStep((current) => current + 1);
+    }
+  };
 
   return (
-    <main className="result-page">
-      <Header onHome={onHome} />
-      <div className="result-shell">
-        <div className="result-heading">
-          <div className="completion-badge">
-            <CheckCircle2 size={18} />
-            Questionnaire terminé
+    <main className="result-page result-wizard-page">
+      <Header onHome={onHome} minimal />
+      <div className="result-wizard-shell">
+        <div className="result-wizard-progress">
+          <div>
+            <span>Votre feuille de route</span>
+            <strong>
+              Étape {resultStep + 1} sur {resultSteps.length} — {resultSteps[resultStep]}
+            </strong>
           </div>
-          <div className={`result-status ${result.tone}`}>
-            {result.tone === "clear" ? <CheckCircle2 size={18} /> : <CircleHelp size={18} />}
-            {result.label}
+          <div className="result-dots" aria-label={`Étape ${resultStep + 1} sur ${resultSteps.length}`}>
+            {resultSteps.map((step, index) => (
+              <span
+                className={index <= resultStep ? "active" : ""}
+                key={step}
+                aria-hidden="true"
+              />
+            ))}
           </div>
-          <p className="eyebrow">Votre résultat en clair</p>
-          <h1>{result.title}</h1>
-          <p>{result.summary}</p>
         </div>
 
-        <section className="calendar-section">
-          <div className="calendar-heading">
-            <div>
-              <p className="eyebrow">Votre calendrier</p>
-              <h2>Les deux dates à retenir</h2>
-            </div>
-            <span className={`calendar-label ${result.tone}`}>{result.calendarLabel}</span>
-          </div>
-
-          <div className="calendar-flow">
-            <article className={`calendar-card ${result.tone}`}>
-              <div className="calendar-card-top">
-                <span className="calendar-number">1</span>
-                <span className={`date-status ${result.tone}`}>
-                  {result.tone === "clear" ? "Date confirmée" : "À confirmer"}
-                </span>
+        <section className={`result-wizard-card step-${resultStep}`}>
+          {resultStep === 0 && (
+            <div className="wizard-screen verdict-screen">
+              <div className={`wizard-main-icon ${result.tone}`}>
+                {result.tone === "clear" ? (
+                  <CheckCircle2 size={38} />
+                ) : (
+                  <CircleHelp size={38} />
+                )}
               </div>
-              <div className="calendar-card-title">
-                <CalendarClock size={22} />
-                <h3>Recevoir les factures</h3>
+              <div className={`result-status ${result.tone}`}>
+                {result.tone === "clear" ? <CheckCircle2 size={17} /> : <CircleHelp size={17} />}
+                {result.label}
               </div>
-              <strong className="calendar-date">{result.receptionDate}</strong>
-              <p>{result.reception}</p>
-            </article>
-
-            <div className="flow-arrow" aria-hidden="true">
-              <ArrowRight size={27} />
-              <span>puis</span>
-            </div>
-
-            <article className={`calendar-card ${result.tone}`}>
-              <div className="calendar-card-top">
-                <span className="calendar-number">2</span>
-                <span className={`date-status ${result.tone}`}>
-                  {result.tone === "clear" ? "Selon vos clients" : "À confirmer"}
-                </span>
+              <p className="eyebrow">Votre réponse</p>
+              <h1>
+                {result.tone === "clear"
+                  ? "Oui, vous êtes concerné"
+                  : "Votre situation doit être confirmée"}
+              </h1>
+              <p className="wizard-lead">{result.summary}</p>
+              {result.reasons.length > 0 && (
+                <div className="wizard-warning">
+                  <CircleHelp size={20} />
+                  <span>{result.reasons[0]}.</span>
+                </div>
+              )}
+              <div className="wizard-next-hint">
+                <ArrowRight size={19} />
+                <span>Étape suivante : découvrir vos dates.</span>
               </div>
-              <div className="calendar-card-title">
-                <FileText size={22} />
-                <h3>Émettre les factures</h3>
-              </div>
-              <strong className="calendar-date">{result.emissionDate}</strong>
-              <p>{result.emission}</p>
-            </article>
-          </div>
-
-          <div className={`calendar-explanation ${result.tone}`}>
-            {result.tone === "clear" ? <CheckCircle2 size={22} /> : <CircleHelp size={22} />}
-            <strong>{result.calendarNote}</strong>
-          </div>
-
-          <div className="reporting-strip">
-            <div className="reporting-icon">
-              <ArrowRight size={21} />
-            </div>
-            <div>
-              <strong>Et le e-reporting ?</strong>
-              <p>{result.reporting}</p>
-            </div>
-          </div>
-        </section>
-
-        {result.reasons.length > 0 && (
-          <section className="review-box">
-            <CircleHelp size={24} />
-            <div>
-              <h2>Pourquoi nous restons prudents</h2>
-              <ul>
-                {result.reasons.map((reason) => (
-                  <li key={reason}>{reason}</li>
-                ))}
-              </ul>
-            </div>
-          </section>
-        )}
-
-        <section className="action-plan">
-          <div className="section-heading">
-            <p className="eyebrow">Trois actions, pas plus</p>
-            <h2>Ce que vous pouvez faire maintenant</h2>
-          </div>
-          <div className="action-list">
-            <article>
-              <span>1</span>
-              <div>
-                <h3>Interrogez votre solution actuelle</h3>
-                <p>
-                  Demandez à votre comptable ou à votre logiciel : « Quelle plateforme agréée
-                  utiliserez-vous pour mes factures ? Dois-je agir ? »
-                </p>
-              </div>
-            </article>
-            <article>
-              <span>2</span>
-              <div>
-                <h3>Vérifiez avec l’administration</h3>
-                <p>Confirmez votre cas avec le questionnaire officiel de la DGFiP.</p>
-                <a
-                  href={SOURCES[0].url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-link"
-                >
-                  Ouvrir le questionnaire officiel
-                  <ExternalLink size={16} />
-                </a>
-              </div>
-            </article>
-            <article>
-              <span>3</span>
-              <div>
-                <h3>Choisissez seulement si nécessaire</h3>
-                <p>
-                  Si votre comptable ou votre logiciel ne prévoit rien, consultez la liste des
-                  plateformes agréées.
-                </p>
-                <a
-                  href={SOURCES[3].url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-link"
-                >
-                  Voir la liste officielle
-                  <ExternalLink size={16} />
-                </a>
-              </div>
-            </article>
-          </div>
-        </section>
-
-        <section className="result-tools">
-          <div>
-            <p className="eyebrow">Garder votre feuille de route</p>
-            <h2>Vous voulez la retrouver plus tard ?</h2>
-            <p>L’affichage est immédiat. L’envoi par e-mail reste entièrement facultatif.</p>
-          </div>
-          <button className="secondary-button" onClick={() => setEmailOpen(true)}>
-            <Mail size={18} />
-            Recevoir par e-mail
-          </button>
-        </section>
-
-        <section className="answer-summary">
-          <button
-            className="summary-toggle"
-            onClick={() => setShowAnswers((value) => !value)}
-            aria-expanded={showAnswers}
-          >
-            <span>Pourquoi cette réponse ?</span>
-            <ChevronDown className={showAnswers ? "rotate" : ""} size={20} />
-          </button>
-          {showAnswers && (
-            <div className="summary-content">
-              <p>Cette orientation repose sur les informations que vous avez sélectionnées :</p>
-              <dl>
-                {answerLabels.map(([label, value]) => (
-                  <div key={label}>
-                    <dt>{label}</dt>
-                    <dd>{value || "Non renseigné"}</dd>
-                  </div>
-                ))}
-              </dl>
-              <button className="text-button" onClick={onEdit}>
-                <ArrowLeft size={17} />
-                Modifier mes réponses
-              </button>
             </div>
           )}
-        </section>
 
-        <section className="result-trust">
-          <ShieldCheck size={27} />
-          <div>
-            <h2>Informations vérifiées le {VERIFIED_DATE}</h2>
-            <p>
-              Résultat établi à partir de vos réponses et de sources publiques officielles. Il
-              constitue une pré-orientation, pas un conseil fiscal personnalisé.
-            </p>
-          </div>
-          <button className="text-button" onClick={onSources}>
-            Voir les sources
-            <ExternalLink size={17} />
-          </button>
-        </section>
+          {resultStep === 1 && (
+            <div className="wizard-screen dates-screen">
+              <p className="eyebrow">Vos échéances</p>
+              <h2>Deux dates, dans l’ordre</h2>
+              <div className="wizard-dates-flow">
+                <article className={`wizard-date-card ${result.tone}`}>
+                  <span>1 — Recevoir</span>
+                  <strong>{result.receptionDate}</strong>
+                  <small>
+                    {result.tone === "clear" ? "Date confirmée" : "Date probable, à confirmer"}
+                  </small>
+                </article>
+                <div className="wizard-date-arrow">
+                  <ArrowRight size={26} />
+                </div>
+                <article className={`wizard-date-card ${result.tone}`}>
+                  <span>2 — Émettre</span>
+                  <strong>{result.emissionDate}</strong>
+                  <small>{result.calendarLabel}</small>
+                </article>
+              </div>
+              <div className={`wizard-calendar-note ${result.tone}`}>
+                {result.tone === "clear" ? <CheckCircle2 size={21} /> : <CircleHelp size={21} />}
+                <span>{result.calendarNote}</span>
+              </div>
+              <div className="wizard-reporting-note">
+                <strong>E-reporting :</strong>
+                <span>{result.reporting}</span>
+              </div>
+            </div>
+          )}
 
-        <section className="feedback">
-          <p>Cette réponse vous a-t-elle été utile ?</p>
-          {feedback ? (
-            <span className="feedback-thanks">
-              <Check size={17} />
-              Merci pour votre avis.
-            </span>
-          ) : (
-            <div>
-              {["Très utile", "Utile", "Pas assez claire"].map((label) => (
-                <button key={label} onClick={() => setFeedback(label)}>
-                  {label}
+          {resultStep === 2 && (
+            <div className="wizard-screen action-screen">
+              <div className="action-step-number">1</div>
+              <p className="eyebrow">À faire en premier</p>
+              <h2>Interrogez votre solution actuelle</h2>
+              <p className="wizard-lead">
+                Contactez votre comptable ou l’assistance de votre logiciel de facturation.
+              </p>
+              <blockquote>
+                « Quelle plateforme agréée utiliserez-vous pour mes factures ? Dois-je effectuer
+                une action de mon côté ? »
+              </blockquote>
+              <div className="wizard-next-hint">
+                <CheckCircle2 size={19} />
+                <span>Commencez par cette question. N’achetez encore aucun nouveau logiciel.</span>
+              </div>
+            </div>
+          )}
+
+          {resultStep === 3 && (
+            <div className="wizard-screen action-screen">
+              <div className="action-step-number">2</div>
+              <p className="eyebrow">Vérification officielle</p>
+              <h2>Confirmez votre situation</h2>
+              <p className="wizard-lead">
+                Utilisez le questionnaire de la DGFiP pour confirmer le résultat avant toute
+                décision importante.
+              </p>
+              <a
+                href={SOURCES[0].url}
+                target="_blank"
+                rel="noreferrer"
+                className="official-link-button"
+              >
+                Ouvrir le questionnaire officiel
+                <ExternalLink size={18} />
+              </a>
+              <div className="wizard-next-hint">
+                <ShieldCheck size={19} />
+                <span>Ce lien ouvre le site officiel impots.gouv.fr.</span>
+              </div>
+            </div>
+          )}
+
+          {resultStep === 4 && (
+            <div className="wizard-screen action-screen">
+              <div className="action-step-number">3</div>
+              <p className="eyebrow">Seulement si nécessaire</p>
+              <h2>Choisissez une solution uniquement s’il en manque une</h2>
+              <p className="wizard-lead">
+                Si votre comptable ou votre logiciel a déjà prévu une plateforme agréée, vous
+                n’avez probablement rien à changer.
+              </p>
+              <a
+                href={SOURCES[3].url}
+                target="_blank"
+                rel="noreferrer"
+                className="official-link-button secondary"
+              >
+                Voir la liste des plateformes agréées
+                <ExternalLink size={18} />
+              </a>
+              <div className="wizard-next-hint">
+                <CircleHelp size={19} />
+                <span>Ne choisissez une nouvelle solution qu’après l’action 1.</span>
+              </div>
+            </div>
+          )}
+
+          {resultStep === 5 && (
+            <div className="wizard-screen finish-screen">
+              <div className="wizard-main-icon clear">
+                <Check size={40} />
+              </div>
+              <p className="eyebrow">Fin de votre feuille de route</p>
+              <h2>C’est terminé : vous savez quoi faire</h2>
+              <div className="finish-recap">
+                <div>
+                  <Check size={17} />
+                  <span>Votre situation est expliquée</span>
+                </div>
+                <div>
+                  <Check size={17} />
+                  <span>Vos dates sont identifiées</span>
+                </div>
+                <div>
+                  <Check size={17} />
+                  <span>Votre première action est claire</span>
+                </div>
+              </div>
+              <div className="finish-priority">
+                <span>Votre priorité maintenant</span>
+                <strong>Demandez à votre comptable ou logiciel quelle plateforme sera utilisée.</strong>
+              </div>
+              <div className="finish-tools">
+                <button className="secondary-button" onClick={() => setEmailOpen(true)}>
+                  <Mail size={18} />
+                  Recevoir par e-mail
                 </button>
-              ))}
+                <button className="text-button" onClick={onSources}>
+                  <ShieldCheck size={17} />
+                  Voir les sources
+                </button>
+              </div>
+              <div className="wizard-feedback">
+                <span>Cette feuille de route est-elle claire ?</span>
+                {feedback ? (
+                  <strong>
+                    <Check size={16} /> Merci pour votre avis
+                  </strong>
+                ) : (
+                  <div>
+                    {["Oui", "À améliorer"].map((label) => (
+                      <button key={label} onClick={() => setFeedback(label)}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </section>
 
-        <div className="restart-row">
-          <button className="text-button" onClick={onEdit}>
-            <ArrowLeft size={17} />
-            Modifier mes réponses
+        <div className="result-wizard-nav">
+          <button className="wizard-back" onClick={resultStep === 5 ? () => setResultStep(0) : goBack}>
+            <ArrowLeft size={18} />
+            {resultStep === 0
+              ? "Modifier mes réponses"
+              : resultStep === 5
+                ? "Revoir depuis le début"
+                : "Retour"}
           </button>
-          <button className="text-button" onClick={onRestart}>
-            <RotateCcw size={17} />
-            Recommencer gratuitement
-          </button>
+
+          {resultStep < resultSteps.length - 1 ? (
+            <button className="primary-button wizard-next" onClick={goNext}>
+              {nextLabels[resultStep]}
+              <ArrowRight size={19} />
+            </button>
+          ) : (
+            <button className="primary-button wizard-next" onClick={onRestart}>
+              Recommencer
+              <RotateCcw size={18} />
+            </button>
+          )}
+        </div>
+
+        <div className="wizard-disclaimer">
+          <ShieldCheck size={14} />
+          Pré-orientation fondée sur vos réponses — informations vérifiées le {VERIFIED_DATE}.
         </div>
       </div>
 
