@@ -1,5 +1,5 @@
 {
-  "buildCommand": "echo 'Static build'",
+  "buildCommand": "pnpm run build:vercel",
   "outputDirectory": "out",
   "cleanUrls": true,
   "trailingSlash": false,
