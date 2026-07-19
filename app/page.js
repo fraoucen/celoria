@@ -1145,7 +1145,7 @@ function Result({
   const nextLabels = [
     "Voir mes dates",
     "Voir ma prochaine action",
-    "Terminer le diagnostic gratuit",
+    "Voir mon récapitulatif",
   ];
 
   const goBack = () => {
@@ -1250,18 +1250,20 @@ function Result({
           {resultStep === 2 && (
             <div className="wizard-screen action-screen">
               <div className="action-step-number">1</div>
-              <p className="eyebrow">À faire en premier</p>
-              <h2>Interrogez votre solution actuelle</h2>
+              <p className="eyebrow">Votre action après le diagnostic</p>
+              <h2>Vérifiez ce qui est déjà prévu</h2>
               <p className="wizard-lead">
-                Contactez votre comptable ou l’assistance de votre logiciel de facturation.
+                Votre comptable ou votre logiciel actuel a peut-être déjà préparé le passage à la
+                facturation électronique.
               </p>
+              <span className="quote-label">Question à lui transmettre</span>
               <blockquote>
-                « Quelle plateforme agréée utiliserez-vous pour mes factures ? Dois-je effectuer
-                une action de mon côté ? »
+                « Quelle plateforme agréée utiliserez-vous pour mes factures ? Dois-je agir de mon
+                côté ? »
               </blockquote>
-              <div className="wizard-next-hint">
+              <div className="action-confirmation">
                 <CheckCircle2 size={19} />
-                <span>Commencez par cette question. N’achetez encore aucun nouveau logiciel.</span>
+                <span>C’est votre première action après le diagnostic.</span>
               </div>
             </div>
           )}
@@ -1272,24 +1274,31 @@ function Result({
                 <Check size={38} />
               </div>
               <p className="eyebrow">Diagnostic gratuit terminé</p>
-              <h2>Besoin d’aide pour choisir votre prochaine étape ?</h2>
+              <h2>Votre situation et votre prochaine action sont claires</h2>
               <p className="wizard-lead">
-                Répondez à deux ou trois questions facultatives. Celoria comparera votre besoin et
-                vous proposera une orientation adaptée.
+                Vous pouvez vous arrêter ici, ou poursuivre avec une comparaison personnalisée.
               </p>
-              <div className="diagnostic-complete-note">
-                <ShieldCheck size={19} />
-                <span>Votre réponse réglementaire est déjà disponible et ne sera pas modifiée.</span>
+              <div className="diagnostic-action-recap">
+                <CheckCircle2 size={21} />
+                <div>
+                  <span>Votre action maintenant</span>
+                  <strong>Demandez à votre comptable ou logiciel ce qui est déjà prévu.</strong>
+                </div>
               </div>
-              <div className="transition-actions">
+              <div className="optional-comparison">
+                <div>
+                  <span>Étape facultative</span>
+                  <strong>Vous n’avez pas de solution ou souhaitez comparer ?</strong>
+                  <p>Répondez à quelques questions pour obtenir une option adaptée.</p>
+                </div>
                 <button className="primary-button" onClick={onRecommend}>
-                  Comparer les solutions
+                  Comparer mes options
                   <ArrowRight size={19} />
                 </button>
-                <button className="secondary-button" onClick={onFinish}>
-                  Terminer sans recommandation
-                </button>
               </div>
+              <button className="finish-here-button" onClick={onFinish}>
+                Terminer ici
+              </button>
             </div>
           )}
 
