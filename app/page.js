@@ -411,6 +411,12 @@ function calculateResult(answers) {
 
   const needsReview = specialProfile || specialLocation || uncertain || exempt || size === "uncertain";
   const issueDate = size === "large" ? "1er septembre 2026" : "1er septembre 2027";
+  const calendarLabel =
+    size === "large"
+      ? "Calendrier ETI / grande entreprise"
+      : size === "small"
+        ? "Calendrier microentreprise / PME"
+        : "Catégorie à confirmer";
 
   if (needsReview) {
     const reviewReasons = [];
@@ -426,6 +432,11 @@ function calculateResult(answers) {
       title: "Votre situation mérite une vérification ciblée",
       summary:
         "Nous pouvons déjà vous orienter, mais nous ne voulons pas transformer une incertitude en fausse certitude.",
+      calendarLabel,
+      receptionDate: "1er septembre 2026*",
+      emissionDate: hasFrenchBusiness ? `${issueDate}*` : "Non identifiée",
+      calendarNote:
+        "Les dates marquées d’un astérisque sont probables, mais un élément de votre dossier doit être confirmé avant de les considérer comme définitives.",
       reasons: reviewReasons,
       reception:
         "La réception électronique peut vous concerner dès le 1er septembre 2026 selon votre qualité d’assujetti et vos opérations.",
@@ -447,6 +458,14 @@ function calculateResult(answers) {
       answers.vat === "franchise"
         ? "Le fait de ne pas facturer la TVA au titre de l’article 293 B ne vous exclut pas de la réforme."
         : "Votre activité entre dans le parcours général de la facturation électronique.",
+    calendarLabel,
+    receptionDate: "1er septembre 2026",
+    emissionDate: hasFrenchBusiness ? issueDate : "Non identifiée",
+    calendarNote: hasFrenchBusiness
+      ? size === "large"
+        ? "Réception et émission commencent le même jour : d’après vos réponses, votre entreprise relève du calendrier 2026 des ETI et grandes entreprises."
+        : "Vous recevez dès 2026, puis vous émettez à partir de 2027 : d’après vos réponses, votre entreprise dispose d’un an supplémentaire pour l’émission."
+      : "Vous devez pouvoir recevoir des factures dès 2026. Aucune émission B2B française n’est identifiée avec les clients sélectionnés.",
     reasons: [],
     reception:
       "Vous devrez pouvoir recevoir les factures électroniques de vos fournisseurs avant le 1er septembre 2026.",
@@ -691,9 +710,19 @@ function Progress({ steps, currentIndex }) {
   const progress = Math.round(((currentIndex + 1) / steps.length) * 100);
   return (
     <div className="progress-wrap" aria-label={`Progression : ${progress} %`}>
-      <div className="progress-labels">
-        <span>{steps[currentIndex]?.group}</span>
-        <span>{progress} %</span>
+      <div className="progress-main">
+        <div className="progress-topic">
+          <span>Votre progression</span>
+          <strong>{steps[currentIndex]?.group}</strong>
+        </div>
+        <div className="progress-score">
+          <strong>
+            {progress}<span>%</span>
+          </strong>
+          <small>
+            Question {currentIndex + 1} sur {steps.length}
+          </small>
+        </div>
       </div>
       <div className="progress-track">
         <span style={{ width: `${progress}%` }} />
@@ -797,6 +826,25 @@ function Questionnaire({
           <p className="eyebrow">{step.eyebrow}</p>
           <h1>{step.question}</h1>
           <p className="question-helper">{step.helper}</p>
+          <div className={`choice-guidance ${step.type}`}>
+            {step.type === "multi" ? (
+              <ClipboardCheck size={21} />
+            ) : (
+              <CheckCircle2 size={21} />
+            )}
+            <div>
+              <strong>
+                {step.type === "multi"
+                  ? "Plusieurs réponses possibles"
+                  : "Une seule réponse possible"}
+              </strong>
+              <span>
+                {step.type === "multi"
+                  ? "Cochez tout ce qui correspond, puis cliquez sur « Continuer »."
+                  : "Cliquez sur votre réponse : l’étape suivante s’affichera automatiquement."}
+              </span>
+            </div>
+          </div>
           <div className="options-grid">
             {step.options.map((option) => (
               <OptionCard
@@ -914,46 +962,79 @@ function Result({
       <Header onHome={onHome} />
       <div className="result-shell">
         <div className="result-heading">
+          <div className="completion-badge">
+            <CheckCircle2 size={18} />
+            Questionnaire terminé
+          </div>
           <div className={`result-status ${result.tone}`}>
             {result.tone === "clear" ? <CheckCircle2 size={18} /> : <CircleHelp size={18} />}
             {result.label}
           </div>
-          <p className="eyebrow">Votre situation en clair</p>
+          <p className="eyebrow">Votre résultat en clair</p>
           <h1>{result.title}</h1>
           <p>{result.summary}</p>
         </div>
 
-        <section className="deadline-grid">
-          <article className="deadline-card priority">
-            <div className="deadline-icon">
-              <CalendarClock size={23} />
+        <section className="calendar-section">
+          <div className="calendar-heading">
+            <div>
+              <p className="eyebrow">Votre calendrier</p>
+              <h2>Les deux dates à retenir</h2>
             </div>
-            <span>Réception</span>
-            <h2>1er septembre 2026</h2>
-            <p>{result.reception}</p>
-          </article>
-          <article className="deadline-card">
-            <div className="deadline-icon">
-              <FileText size={23} />
+            <span className={`calendar-label ${result.tone}`}>{result.calendarLabel}</span>
+          </div>
+
+          <div className="calendar-flow">
+            <article className={`calendar-card ${result.tone}`}>
+              <div className="calendar-card-top">
+                <span className="calendar-number">1</span>
+                <span className={`date-status ${result.tone}`}>
+                  {result.tone === "clear" ? "Date confirmée" : "À confirmer"}
+                </span>
+              </div>
+              <div className="calendar-card-title">
+                <CalendarClock size={22} />
+                <h3>Recevoir les factures</h3>
+              </div>
+              <strong className="calendar-date">{result.receptionDate}</strong>
+              <p>{result.reception}</p>
+            </article>
+
+            <div className="flow-arrow" aria-hidden="true">
+              <ArrowRight size={27} />
+              <span>puis</span>
             </div>
-            <span>Émission</span>
-            <h2>
-              {result.emission.includes("2026")
-                ? "1er septembre 2026"
-                : result.emission.includes("2027")
-                  ? "1er septembre 2027"
-                  : "Selon vos opérations"}
-            </h2>
-            <p>{result.emission}</p>
-          </article>
-          <article className="deadline-card">
-            <div className="deadline-icon">
-              <ArrowRight size={23} />
+
+            <article className={`calendar-card ${result.tone}`}>
+              <div className="calendar-card-top">
+                <span className="calendar-number">2</span>
+                <span className={`date-status ${result.tone}`}>
+                  {result.tone === "clear" ? "Selon vos clients" : "À confirmer"}
+                </span>
+              </div>
+              <div className="calendar-card-title">
+                <FileText size={22} />
+                <h3>Émettre les factures</h3>
+              </div>
+              <strong className="calendar-date">{result.emissionDate}</strong>
+              <p>{result.emission}</p>
+            </article>
+          </div>
+
+          <div className={`calendar-explanation ${result.tone}`}>
+            {result.tone === "clear" ? <CheckCircle2 size={22} /> : <CircleHelp size={22} />}
+            <strong>{result.calendarNote}</strong>
+          </div>
+
+          <div className="reporting-strip">
+            <div className="reporting-icon">
+              <ArrowRight size={21} />
             </div>
-            <span>Transmission de données</span>
-            <h2>E-reporting</h2>
-            <p>{result.reporting}</p>
-          </article>
+            <div>
+              <strong>Et le e-reporting ?</strong>
+              <p>{result.reporting}</p>
+            </div>
+          </div>
         </section>
 
         {result.reasons.length > 0 && (
