@@ -396,6 +396,19 @@ const SOLUTIONS = {
   },
 };
 
+const DIAGNOSTIC_STAGES = {
+  profile: { number: 1, title: "Votre activité" },
+  location: { number: 2, title: "Adresse administrative" },
+  employees: { number: 3, title: "Taille de l’entreprise" },
+  revenue: { number: 3, title: "Taille de l’entreprise", precision: true },
+  balance: { number: 3, title: "Taille de l’entreprise", precision: true },
+  clients: { number: 4, title: "Vos clients" },
+  activity: { number: 5, title: "Ce que vous facturez" },
+  vat: { number: 6, title: "Votre situation TVA" },
+};
+
+const DIAGNOSTIC_STAGE_COUNT = 6;
+
 function initialAnswers() {
   return {
     profile: null,
@@ -801,7 +814,7 @@ function Landing({ onStart, onSources }) {
               <ArrowRight size={20} />
             </button>
           </div>
-          <p className="hero-proof">1 minute · Sans inscription · Résultat immédiat</p>
+          <p className="hero-proof">6 étapes rapides · Sans inscription · Résultat immédiat</p>
         </div>
 
         <div className="hero-card" aria-label="Aperçu de la recommandation">
@@ -876,27 +889,42 @@ function Landing({ onStart, onSources }) {
   );
 }
 
-function Progress({ steps, currentIndex }) {
-  const progress = Math.round(((currentIndex + 1) / steps.length) * 100);
+function Progress({ step }) {
+  const stage = DIAGNOSTIC_STAGES[step.id];
+  const remaining = DIAGNOSTIC_STAGE_COUNT - stage.number;
+  const progress = Math.round((stage.number / DIAGNOSTIC_STAGE_COUNT) * 100);
+  const guidance = stage.precision
+    ? "Une courte précision est nécessaire pour déterminer votre échéance."
+    : stage.number === DIAGNOSTIC_STAGE_COUNT
+      ? "Dernière étape avant votre résultat."
+      : `Encore ${remaining} étape${remaining > 1 ? "s" : ""} avant votre résultat.`;
+
   return (
-    <div className="progress-wrap" aria-label={`Progression : ${progress} %`}>
+    <div
+      className={`progress-wrap ${stage.precision ? "precision" : ""} ${stage.number === DIAGNOSTIC_STAGE_COUNT ? "last" : ""}`}
+      aria-label={`Étape ${stage.number} sur ${DIAGNOSTIC_STAGE_COUNT} : ${stage.title}`}
+    >
       <div className="progress-main">
         <div className="progress-topic">
-          <span>Votre progression</span>
-          <strong>{steps[currentIndex]?.group}</strong>
-        </div>
-        <div className="progress-score">
+          <span>{stage.precision ? "Question de précision" : "Étape actuelle"}</span>
           <strong>
-            {progress}<span>%</span>
+            <b>{stage.number}</b> sur {DIAGNOSTIC_STAGE_COUNT}
+            <em>— {stage.title}</em>
           </strong>
-          <small>
-            Question {currentIndex + 1} sur {steps.length}
-          </small>
+        </div>
+        <div className="progress-target">
+          <Flag size={17} />
+          <span>Votre résultat</span>
         </div>
       </div>
       <div className="progress-track">
         <span style={{ width: `${progress}%` }} />
+        <i aria-hidden="true" />
       </div>
+      <p className="progress-guidance">
+        {stage.precision ? <CircleHelp size={15} /> : <ArrowRight size={15} />}
+        {guidance}
+      </p>
     </div>
   );
 }
@@ -995,10 +1023,10 @@ function Questionnaire({
           <ShieldCheck size={17} />
           <span>
             <strong>Diagnostic réglementaire gratuit</strong>
-            Répondez uniquement aux questions nécessaires
+            6 étapes rapides. Une courte précision peut apparaître selon votre situation.
           </span>
         </div>
-        <Progress steps={steps} currentIndex={safeIndex} />
+        <Progress step={step} />
         <section className="question-card" key={step.id}>
           <p className="eyebrow">{step.eyebrow}</p>
           <h1>{step.question}</h1>
