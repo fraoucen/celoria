@@ -492,11 +492,11 @@ function FranceMark() {
 
 function Brand() {
   return (
-    <div className="brand" aria-label="FactureClair">
+    <div className="brand" aria-label="Celoria">
       <span className="brand-mark" aria-hidden="true">
         <FileCheck2 size={21} strokeWidth={2.1} />
       </span>
-      <span>FactureClair</span>
+      <span>Celoria</span>
     </div>
   );
 }
@@ -687,7 +687,7 @@ function Landing({ onStart, onSources }) {
           <p className="eyebrow">Une information transparente</p>
           <h2>Des sources officielles, une lecture indépendante.</h2>
           <p>
-            FactureClair simplifie les informations publiques sans se substituer à
+            Celoria Facture simplifie les informations publiques sans se substituer à
             l’administration ni à votre conseil professionnel.
           </p>
         </div>

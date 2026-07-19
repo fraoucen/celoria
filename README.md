@@ -1,4 +1,4 @@
-# FactureClair — V1
+# Celoria Facture — V1
 
 Première version fonctionnelle du questionnaire d’orientation sur la réforme française de la facturation électronique.
 

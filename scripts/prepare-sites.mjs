@@ -24,7 +24,7 @@ if (!existsSync(serverEntry)) {
 }
 
 const vinextServer = await import(`${pathToFileURL(serverEntry).href}?build=${Date.now()}`);
-const rendered = await vinextServer.default(new Request("https://facture-clair.local/"));
+const rendered = await vinextServer.default(new Request("https://celoria.fr/"));
 
 if (!rendered.ok) {
   throw new Error(`Le rendu statique a échoué avec le statut ${rendered.status}.`);

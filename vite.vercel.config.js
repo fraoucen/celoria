@@ -4,7 +4,7 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [
     {
-      name: "facture-clair-jsx",
+      name: "celoria-facture-jsx",
       enforce: "pre",
       async transform(code, id) {
         if (!id.endsWith("/app/page.js")) return null;
