@@ -1,5 +1,7 @@
 import "./globals.css";
 
+export const runtime = "edge";
+
 export const metadata = {
   title: "FactureClair — Votre feuille de route en 1 minute",
   description:
