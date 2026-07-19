@@ -20,20 +20,16 @@ import {
   FileText,
   Flag,
   Globe2,
-  GraduationCap,
-  HeartPulse,
   Home,
   Landmark,
-  Mail,
   MapPin,
   Package,
-  RefreshCcw,
-  RotateCcw,
+  Scale,
+  Search,
+  Share2,
+  SlidersHorizontal,
   ShieldCheck,
-  ShoppingBag,
   Sparkles,
-  Stethoscope,
-  Store,
   Users,
   WalletCards,
   Wrench,
@@ -42,6 +38,8 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 
 const VERIFIED_DATE = "18 juillet 2026";
+const OFFICIAL_PLATFORM_LIST =
+  "https://www.impots.gouv.fr/je-consulte-la-liste-des-plateformes-agreees";
 
 const SOURCES = [
   {
@@ -284,6 +282,120 @@ const VAT_OPTIONS = [
   },
 ];
 
+const MANAGEMENT_OPTIONS = [
+  {
+    value: "accountant",
+    title: "Avec mon expert-comptable",
+    description: "Il gère tout ou une partie de ma facturation",
+    icon: Users,
+  },
+  {
+    value: "software",
+    title: "Avec un logiciel",
+    description: "J’utilise déjà un outil de facturation",
+    icon: FileText,
+  },
+  {
+    value: "manual",
+    title: "Avec Word, Excel ou manuellement",
+    description: "Je crée et j’envoie mes factures moi-même",
+    icon: ClipboardCheck,
+  },
+  {
+    value: "none",
+    title: "Je n’ai pas encore de solution",
+    description: "Je démarre ou je souhaite changer de méthode",
+    icon: Sparkles,
+  },
+  {
+    value: "unknown",
+    title: "Je ne sais pas",
+    description: "Celoria vous aidera à identifier la prochaine étape",
+    icon: CircleHelp,
+  },
+];
+
+const VOLUME_OPTIONS = [
+  {
+    value: "small",
+    title: "10 factures ou moins par mois",
+    description: "Un besoin simple et occasionnel",
+    icon: FileText,
+  },
+  {
+    value: "medium",
+    title: "Entre 11 et 100 factures par mois",
+    description: "Un volume régulier à automatiser",
+    icon: Boxes,
+  },
+  {
+    value: "large",
+    title: "Plus de 100 factures par mois",
+    description: "Un besoin plus structuré ou connecté",
+    icon: BarChart3,
+  },
+  {
+    value: "unknown",
+    title: "Je ne sais pas",
+    description: "Une estimation approximative suffit",
+    icon: CircleHelp,
+  },
+];
+
+const NEED_OPTIONS = [
+  {
+    value: "invoicing",
+    title: "Créer et recevoir mes factures",
+    description: "Je cherche avant tout un outil simple",
+    icon: FileCheck2,
+  },
+  {
+    value: "accounting",
+    title: "Gérer aussi ma comptabilité",
+    description: "Facturation, déclarations et suivi comptable",
+    icon: WalletCards,
+  },
+  {
+    value: "accountant",
+    title: "Trouver un expert-comptable",
+    description: "Je préfère être accompagné par un professionnel",
+    icon: Users,
+  },
+  {
+    value: "unknown",
+    title: "Je ne sais pas encore",
+    description: "Celoria privilégiera l’option la plus simple",
+    icon: CircleHelp,
+  },
+];
+
+const SOLUTIONS = {
+  tiime: {
+    name: "Tiime",
+    label: "Facturation simple",
+    url: "https://www.tiime.fr/",
+    description:
+      "Une solution pensée pour créer, envoyer et suivre ses factures sans ajouter une gestion comptable complète.",
+    check: "Vérifiez que l’offre choisie couvre votre volume et les fonctions dont vous avez besoin.",
+  },
+  indy: {
+    name: "Indy",
+    label: "Facturation et comptabilité",
+    url: "https://www.indy.fr/",
+    description:
+      "Une solution destinée notamment aux indépendants qui veulent réunir facturation et gestion comptable.",
+    check: "Vérifiez que votre statut, votre régime fiscal et vos déclarations sont pris en charge.",
+  },
+  dougs: {
+    name: "Dougs",
+    label: "Accompagnement comptable",
+    url: "https://www.dougs.fr/",
+    description:
+      "Un cabinet d’expertise comptable en ligne pour les professionnels qui souhaitent être accompagnés.",
+    check: "Demandez précisément ce qui est inclus dans la mission et qui gérera vos factures électroniques.",
+  },
+};
+
 function initialAnswers() {
   return {
     profile: null,
@@ -295,6 +407,70 @@ function initialAnswers() {
     activity: null,
     vat: null,
   };
+}
+
+function initialRecommendationAnswers() {
+  return {
+    management: null,
+    volume: null,
+    need: null,
+  };
+}
+
+function trackEvent(name, details = {}) {
+  if (typeof window === "undefined") return;
+  const event = { name, details, at: new Date().toISOString() };
+  window.dispatchEvent(new CustomEvent("celoria:metric", { detail: event }));
+}
+
+function getRecommendation(answers, commercialAnswers) {
+  const complexCompany =
+    answers.employees === "over" ||
+    (answers.revenue === "over" && answers.balance === "over") ||
+    answers.profile === "special";
+
+  if (complexCompany || commercialAnswers.volume === "large") {
+    return {
+      type: "orientation",
+      title: "Votre besoin demande une étude plus complète",
+      description:
+        "Votre volume ou la structure de votre entreprise justifie une analyse avec votre équipe comptable, votre intégrateur ou votre éditeur ERP.",
+      action:
+        "Préparez votre volume mensuel, vos logiciels actuels et vos besoins d’intégration avant de contacter un professionnel.",
+    };
+  }
+
+  if (commercialAnswers.management === "accountant") {
+    return {
+      type: "existing",
+      title: "Votre expert-comptable est votre premier interlocuteur",
+      description:
+        "Une nouvelle solution n’est pas forcément nécessaire. Demandez d’abord quelle plateforme agréée sera utilisée pour votre entreprise.",
+      script:
+        "Quelle plateforme agréée utiliserez-vous pour mes factures électroniques, et dois-je effectuer une action de mon côté ?",
+    };
+  }
+
+  if (commercialAnswers.management === "software") {
+    return {
+      type: "existing",
+      title: "Vérifiez d’abord votre logiciel actuel",
+      description:
+        "Changer d’outil serait inutile si votre éditeur prévoit déjà la réception et l’émission des factures électroniques.",
+      script:
+        "Votre logiciel passera-t-il par une plateforme agréée, et quelles actions dois-je réaliser avant mon échéance ?",
+    };
+  }
+
+  if (commercialAnswers.need === "accountant") {
+    return { type: "solution", key: "dougs", solution: SOLUTIONS.dougs };
+  }
+
+  if (commercialAnswers.need === "accounting") {
+    return { type: "solution", key: "indy", solution: SOLUTIONS.indy };
+  }
+
+  return { type: "solution", key: "tiime", solution: SOLUTIONS.tiime };
 }
 
 function getSteps(answers) {
@@ -524,7 +700,6 @@ function Header({ onHome, minimal = false }) {
       </button>
       <div className="header-right">
         {!minimal && <TrustLine compact />}
-        <span className="independent">Site indépendant</span>
       </div>
     </header>
   );
@@ -550,8 +725,8 @@ function SourceDrawer({ open, onClose }) {
         <p className="eyebrow">Transparence</p>
         <h2 id="sources-title">Nos sources officielles</h2>
         <p>
-          Les règles présentées ont été contrôlées le <strong>{VERIFIED_DATE}</strong>. Le site
-          est indépendant et n’est pas affilié à l’administration française.
+          Les règles présentées ont été contrôlées le <strong>{VERIFIED_DATE}</strong>. Utilisez
+          toujours le questionnaire de la DGFiP pour confirmer une situation particulière.
         </p>
         <div className="source-list">
           {SOURCES.map((source) => (
@@ -570,6 +745,38 @@ function SourceDrawer({ open, onClose }) {
   );
 }
 
+function Footer({ onSources }) {
+  const footerLinks = [
+    "À propos",
+    "Comment ça marche",
+    "Contact",
+    "FAQ",
+    "Mentions légales",
+    "Confidentialité",
+    "Cookies",
+  ];
+
+  return (
+    <footer className="site-footer">
+      <div className="footer-brand">
+        <Brand />
+        <p>Des réponses claires pour choisir la prochaine étape adaptée à votre entreprise.</p>
+      </div>
+      <nav aria-label="Pied de page">
+        {footerLinks.map((label) => (
+          <button type="button" key={label}>
+            {label}
+          </button>
+        ))}
+        <button type="button" onClick={onSources}>
+          Sources officielles
+        </button>
+      </nav>
+      <small>© {new Date().getFullYear()} Celoria</small>
+    </footer>
+  );
+}
+
 function Landing({ onStart, onSources }) {
   return (
     <main className="landing">
@@ -577,47 +784,33 @@ function Landing({ onStart, onSources }) {
       <section className="hero">
         <div className="hero-copy">
           <div className="country-pill">
-            <FranceMark />
-            Pour les professionnels en France
+            <SlidersHorizontal size={17} />
+            Recommandation personnalisée
           </div>
           <h1>
-            La facture électronique,
-            <span> enfin expliquée clairement.</span>
+            Trouvez la solution de facturation
+            <span> adaptée à votre entreprise.</span>
           </h1>
           <p className="hero-lead">
-            Répondez à quelques questions simples. Repartez avec vos échéances et vos prochaines
-            étapes, gratuitement.
+            Celoria clarifie d’abord vos obligations, puis compare vos besoins pour vous orienter
+            vers une solution réellement pertinente.
           </p>
           <div className="hero-actions">
             <button className="primary-button hero-button" onClick={onStart}>
-              Obtenir ma feuille de route
+              Comparer gratuitement
               <ArrowRight size={20} />
             </button>
-            <span className="duration">
-              <CalendarClock size={18} />
-              Environ 1 minute
-            </span>
           </div>
-          <div className="benefits" aria-label="Avantages">
-            <span>
-              <Check size={17} /> Sans inscription
-            </span>
-            <span>
-              <Check size={17} /> Sans e-mail obligatoire
-            </span>
-            <span>
-              <Check size={17} /> Résultat immédiat
-            </span>
-          </div>
+          <p className="hero-proof">1 minute · Sans inscription · Résultat immédiat</p>
         </div>
 
-        <div className="hero-card" aria-label="Aperçu de la feuille de route">
+        <div className="hero-card" aria-label="Aperçu de la recommandation">
           <div className="hero-card-top">
             <div className="mini-brand">
-              <ClipboardCheck size={18} />
-              Votre feuille de route
+              <Search size={18} />
+              Votre orientation
             </div>
-            <span className="ready-dot">Prête en 1 min</span>
+            <span className="ready-dot">Sur mesure</span>
           </div>
           <div className="timeline-preview">
             <div className="timeline-row active">
@@ -625,18 +818,18 @@ function Landing({ onStart, onSources }) {
                 <Check size={17} />
               </span>
               <div>
-                <small>Votre situation</small>
-                <strong>Une réponse claire</strong>
+                <small>Étape gratuite</small>
+                <strong>Vos obligations clarifiées</strong>
               </div>
             </div>
             <div className="timeline-line" />
             <div className="timeline-row">
               <span className="timeline-icon">
-                <CalendarClock size={17} />
+                <Scale size={17} />
               </span>
               <div>
-                <small>Vos échéances</small>
-                <strong>2026 et 2027 expliquées</strong>
+                <small>Comparaison</small>
+                <strong>Vos besoins analysés</strong>
               </div>
             </div>
             <div className="timeline-line" />
@@ -645,62 +838,40 @@ function Landing({ onStart, onSources }) {
                 <ArrowRight size={17} />
               </span>
               <div>
-                <small>Votre prochaine étape</small>
-                <strong>Une action simple à réaliser</strong>
+                <small>Votre résultat</small>
+                <strong>Une solution expliquée</strong>
               </div>
             </div>
           </div>
           <div className="verified-card">
             <ShieldCheck size={20} />
             <div>
-              <strong>Informations vérifiées</strong>
-              <span>Sources officielles contrôlées le {VERIFIED_DATE}</span>
+              <strong>Diagnostic avant recommandation</strong>
+              <span>Le résultat réglementaire reste séparé de la comparaison.</span>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="how-it-works">
+      <section className="how-it-works compact-flow">
         <div>
           <span className="section-number">01</span>
-          <h2>Vous répondez</h2>
-          <p>Des questions sans jargon, avec toujours la possibilité de dire « Je ne sais pas ».</p>
+          <h2>Diagnostic gratuit</h2>
+          <p>Vos obligations et vos échéances sont clarifiées avant toute recommandation.</p>
         </div>
         <div>
           <span className="section-number">02</span>
-          <h2>Nous clarifions</h2>
-          <p>Vos réponses sont comparées aux règles officielles vérifiées.</p>
+          <h2>Besoin analysé</h2>
+          <p>Votre méthode actuelle, votre volume et votre besoin sont comparés.</p>
         </div>
         <div>
           <span className="section-number">03</span>
-          <h2>Vous agissez</h2>
-          <p>Vous obtenez vos dates, vos obligations probables et votre prochaine action.</p>
+          <h2>Solution adaptée</h2>
+          <p>Une seule orientation expliquée, avec les alternatives officielles toujours accessibles.</p>
         </div>
       </section>
 
-      <section className="trust-banner">
-        <div className="trust-banner-icon">
-          <ShieldCheck size={26} />
-        </div>
-        <div>
-          <p className="eyebrow">Une information transparente</p>
-          <h2>Des sources officielles, une lecture indépendante.</h2>
-          <p>
-            Celoria Facture simplifie les informations publiques sans se substituer à
-            l’administration ni à votre conseil professionnel.
-          </p>
-        </div>
-        <button className="text-button" onClick={onSources}>
-          Voir les sources
-          <ExternalLink size={17} />
-        </button>
-      </section>
-
-      <footer className="site-footer">
-        <Brand />
-        <p>Site indépendant — non affilié à l’administration française.</p>
-        <button onClick={onSources}>Sources officielles</button>
-      </footer>
+      <Footer onSources={onSources} />
     </main>
   );
 }
@@ -820,6 +991,13 @@ function Questionnaire({
     <main className="questionnaire">
       <Header onHome={onHome} minimal />
       <div className="question-shell">
+        <div className="diagnostic-label">
+          <ShieldCheck size={17} />
+          <span>
+            <strong>Diagnostic réglementaire gratuit</strong>
+            Répondez uniquement aux questions nécessaires
+          </span>
+        </div>
         <Progress steps={steps} currentIndex={safeIndex} />
         <section className="question-card" key={step.id}>
           <p className="eyebrow">{step.eyebrow}</p>
@@ -929,21 +1107,17 @@ function Analyzing({ onDone }) {
 function Result({
   answers,
   onEdit,
-  onRestart,
-  onSources,
+  onRecommend,
+  onFinish,
   onHome,
 }) {
   const result = calculateResult(answers);
   const [resultStep, setResultStep] = useState(0);
-  const [emailOpen, setEmailOpen] = useState(false);
-  const [feedback, setFeedback] = useState(null);
-  const resultSteps = ["Réponse", "Dates", "Action 1", "Action 2", "Action 3", "Terminé"];
+  const resultSteps = ["Réponse", "Échéances", "Action", "Diagnostic terminé"];
   const nextLabels = [
     "Voir mes dates",
-    "Voir ce que je dois faire",
-    "Action suivante",
-    "Action suivante",
-    "Terminer ma feuille de route",
+    "Voir ma prochaine action",
+    "Terminer le diagnostic gratuit",
   ];
 
   const goBack = () => {
@@ -1065,118 +1239,38 @@ function Result({
           )}
 
           {resultStep === 3 && (
-            <div className="wizard-screen action-screen">
-              <div className="action-step-number">2</div>
-              <p className="eyebrow">Vérification officielle</p>
-              <h2>Confirmez votre situation</h2>
-              <p className="wizard-lead">
-                Utilisez le questionnaire de la DGFiP pour confirmer le résultat avant toute
-                décision importante.
-              </p>
-              <a
-                href={SOURCES[0].url}
-                target="_blank"
-                rel="noreferrer"
-                className="official-link-button"
-              >
-                Ouvrir le questionnaire officiel
-                <ExternalLink size={18} />
-              </a>
-              <div className="wizard-next-hint">
-                <ShieldCheck size={19} />
-                <span>Ce lien ouvre le site officiel impots.gouv.fr.</span>
-              </div>
-            </div>
-          )}
-
-          {resultStep === 4 && (
-            <div className="wizard-screen action-screen">
-              <div className="action-step-number">3</div>
-              <p className="eyebrow">Seulement si nécessaire</p>
-              <h2>Choisissez une solution uniquement s’il en manque une</h2>
-              <p className="wizard-lead">
-                Si votre comptable ou votre logiciel a déjà prévu une plateforme agréée, vous
-                n’avez probablement rien à changer.
-              </p>
-              <a
-                href={SOURCES[3].url}
-                target="_blank"
-                rel="noreferrer"
-                className="official-link-button secondary"
-              >
-                Voir la liste des plateformes agréées
-                <ExternalLink size={18} />
-              </a>
-              <div className="wizard-next-hint">
-                <CircleHelp size={19} />
-                <span>Ne choisissez une nouvelle solution qu’après l’action 1.</span>
-              </div>
-            </div>
-          )}
-
-          {resultStep === 5 && (
-            <div className="wizard-screen finish-screen">
+            <div className="wizard-screen transition-screen">
               <div className="wizard-main-icon clear">
-                <Check size={40} />
+                <Check size={38} />
               </div>
-              <p className="eyebrow">Fin de votre feuille de route</p>
-              <h2>C’est terminé : vous savez quoi faire</h2>
-              <div className="finish-recap">
-                <div>
-                  <Check size={17} />
-                  <span>Votre situation est expliquée</span>
-                </div>
-                <div>
-                  <Check size={17} />
-                  <span>Vos dates sont identifiées</span>
-                </div>
-                <div>
-                  <Check size={17} />
-                  <span>Votre première action est claire</span>
-                </div>
+              <p className="eyebrow">Diagnostic gratuit terminé</p>
+              <h2>Besoin d’aide pour choisir votre prochaine étape ?</h2>
+              <p className="wizard-lead">
+                Répondez à deux ou trois questions facultatives. Celoria comparera votre besoin et
+                vous proposera une orientation adaptée.
+              </p>
+              <div className="diagnostic-complete-note">
+                <ShieldCheck size={19} />
+                <span>Votre réponse réglementaire est déjà disponible et ne sera pas modifiée.</span>
               </div>
-              <div className="finish-priority">
-                <span>Votre priorité maintenant</span>
-                <strong>Demandez à votre comptable ou logiciel quelle plateforme sera utilisée.</strong>
-              </div>
-              <div className="finish-tools">
-                <button className="secondary-button" onClick={() => setEmailOpen(true)}>
-                  <Mail size={18} />
-                  Recevoir par e-mail
+              <div className="transition-actions">
+                <button className="primary-button" onClick={onRecommend}>
+                  Comparer les solutions
+                  <ArrowRight size={19} />
                 </button>
-                <button className="text-button" onClick={onSources}>
-                  <ShieldCheck size={17} />
-                  Voir les sources
+                <button className="secondary-button" onClick={onFinish}>
+                  Terminer sans recommandation
                 </button>
-              </div>
-              <div className="wizard-feedback">
-                <span>Cette feuille de route est-elle claire ?</span>
-                {feedback ? (
-                  <strong>
-                    <Check size={16} /> Merci pour votre avis
-                  </strong>
-                ) : (
-                  <div>
-                    {["Oui", "À améliorer"].map((label) => (
-                      <button key={label} onClick={() => setFeedback(label)}>
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                )}
               </div>
             </div>
           )}
+
         </section>
 
         <div className="result-wizard-nav">
-          <button className="wizard-back" onClick={resultStep === 5 ? () => setResultStep(0) : goBack}>
+          <button className="wizard-back" onClick={goBack}>
             <ArrowLeft size={18} />
-            {resultStep === 0
-              ? "Modifier mes réponses"
-              : resultStep === 5
-                ? "Revoir depuis le début"
-                : "Retour"}
+            {resultStep === 0 ? "Modifier mes réponses" : "Retour"}
           </button>
 
           {resultStep < resultSteps.length - 1 ? (
@@ -1184,12 +1278,7 @@ function Result({
               {nextLabels[resultStep]}
               <ArrowRight size={19} />
             </button>
-          ) : (
-            <button className="primary-button wizard-next" onClick={onRestart}>
-              Recommencer
-              <RotateCcw size={18} />
-            </button>
-          )}
+          ) : null}
         </div>
 
         <div className="wizard-disclaimer">
@@ -1198,76 +1287,354 @@ function Result({
         </div>
       </div>
 
-      {emailOpen && <EmailModal onClose={() => setEmailOpen(false)} />}
     </main>
   );
 }
 
-function EmailModal({ onClose }) {
-  const [sent, setSent] = useState(false);
-  const submit = (event) => {
-    event.preventDefault();
-    setSent(true);
+function RecommendationQuestionnaire({
+  answers,
+  setAnswers,
+  stepIndex,
+  setStepIndex,
+  onComplete,
+  onBack,
+  onHome,
+}) {
+  const steps = useMemo(() => {
+    const list = [
+      {
+        id: "management",
+        group: "Votre organisation",
+        eyebrow: "Comparaison facultative",
+        question: "Comment gérez-vous actuellement vos factures ?",
+        helper: "Cette réponse évite de vous proposer un outil dont vous n’avez pas besoin.",
+        options: MANAGEMENT_OPTIONS,
+      },
+    ];
+    if (!["accountant", "software"].includes(answers.management)) {
+      list.push(
+        {
+          id: "volume",
+          group: "Votre volume",
+          eyebrow: "Une estimation suffit",
+          question: "Combien de factures gérez-vous approximativement chaque mois ?",
+          helper: "Comptez les factures envoyées et reçues. Il n’est pas nécessaire d’être précis.",
+          options: VOLUME_OPTIONS,
+        },
+        {
+          id: "need",
+          group: "Votre besoin",
+          eyebrow: "Dernière question",
+          question: "De quoi avez-vous principalement besoin ?",
+          helper: "Choisissez votre priorité actuelle. Vous pourrez toujours comparer ensuite.",
+          options: NEED_OPTIONS,
+        },
+      );
+    }
+    return list;
+  }, [answers.management]);
+
+  const safeIndex = Math.min(stepIndex, steps.length - 1);
+  const step = steps[safeIndex];
+  const selected = answers[step.id];
+
+  const choose = (value) => {
+    const next = { ...answers, [step.id]: value };
+    if (step.id === "management" && ["accountant", "software"].includes(value)) {
+      next.volume = null;
+      next.need = null;
+    }
+    setAnswers(next);
+    setTimeout(() => {
+      const nextSteps =
+        ["accountant", "software"].includes(next.management) ? steps.slice(0, 1) : steps;
+      if (safeIndex >= nextSteps.length - 1) onComplete(next);
+      else setStepIndex(safeIndex + 1);
+    }, 220);
   };
 
   return (
-    <div className="modal-backdrop" onMouseDown={onClose}>
-      <div
-        className="email-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="email-title"
-        onMouseDown={(event) => event.stopPropagation()}
-      >
-        <button className="drawer-close" onClick={onClose} aria-label="Fermer">
-          <X size={20} />
-        </button>
-        {sent ? (
-          <div className="email-success">
-            <div className="success-icon">
-              <Check size={25} />
-            </div>
-            <h2>Fonction bientôt disponible</h2>
-            <p>
-              Cette première version présente l’expérience complète. L’envoi réel sera activé lors
-              de la mise en ligne commerciale.
-            </p>
-            <button className="primary-button" onClick={onClose}>
-              Fermer
+    <main className="recommendation-page">
+      <Header onHome={onHome} minimal />
+      <div className="recommendation-shell">
+        <div className="recommendation-head">
+          <span>Comparaison personnalisée</span>
+          <strong>
+            Question {safeIndex + 1} sur {steps.length}
+          </strong>
+        </div>
+        <section className="recommendation-question" key={step.id}>
+          <div className="commercial-badge">
+            <Scale size={17} />
+            Recommandation facultative
+          </div>
+          <p className="eyebrow">{step.eyebrow}</p>
+          <h1>{step.question}</h1>
+          <p className="question-helper">{step.helper}</p>
+          <div className="options-grid">
+            {step.options.map((option) => (
+              <OptionCard
+                key={option.value}
+                option={option}
+                selected={selected === option.value}
+                onClick={() => choose(option.value)}
+              />
+            ))}
+          </div>
+          <div className="question-actions">
+            <button
+              className="back-button"
+              onClick={() => (safeIndex === 0 ? onBack() : setStepIndex(safeIndex - 1))}
+            >
+              <ArrowLeft size={18} />
+              Retour
             </button>
           </div>
-        ) : (
-          <>
-            <div className="modal-icon">
-              <Mail size={24} />
-            </div>
-            <p className="eyebrow">Facultatif</p>
-            <h2 id="email-title">Recevoir votre feuille de route</h2>
-            <p>
-              Votre résultat reste visible sans e-mail. Cette adresse servirait uniquement à vous
-              envoyer cette feuille de route.
-            </p>
-            <form onSubmit={submit}>
-              <label htmlFor="email">Votre adresse e-mail</label>
-              <input id="email" type="email" placeholder="vous@entreprise.fr" required />
-              <button className="primary-button" type="submit">
-                M’envoyer ma feuille de route
-                <ArrowRight size={18} />
-              </button>
-            </form>
-            <small>Aucune inscription automatique à une newsletter.</small>
-          </>
-        )}
+        </section>
+        <p className="commercial-separation">
+          Cette partie compare votre besoin. Elle ne modifie pas votre diagnostic réglementaire.
+        </p>
+      </div>
+    </main>
+  );
+}
+
+function SolutionComparison({ selectedKey }) {
+  const rows = [
+    ["tiime", "Tiime", "Facturer simplement", "Facturation seule"],
+    ["indy", "Indy", "Facturer et gérer sa comptabilité", "Indépendants"],
+    ["dougs", "Dougs", "Être accompagné par un comptable", "Accompagnement"],
+  ];
+
+  return (
+    <div className="comparison-table">
+      <div className="comparison-table-head">
+        <div>
+          <p className="eyebrow">Comparaison simple</p>
+          <h2>Comprendre les différences</h2>
+        </div>
+        <span>Pas de classement général</span>
+      </div>
+      <div className="comparison-rows">
+        {rows.map(([key, name, purpose, profile]) => (
+          <div className={key === selectedKey ? "recommended" : ""} key={key}>
+            <strong>{name}</strong>
+            <span>{purpose}</span>
+            <small>{profile}</small>
+            {key === selectedKey && <b>Adapté à vos réponses</b>}
+          </div>
+        ))}
       </div>
     </div>
+  );
+}
+
+function RecommendationResult({ regulatoryAnswers, commercialAnswers, onFinish, onEdit, onHome }) {
+  const recommendation = getRecommendation(regulatoryAnswers, commercialAnswers);
+
+  const clickSolution = () => {
+    if (recommendation.type === "solution") {
+      trackEvent("partner_click", { solution: recommendation.key });
+    }
+  };
+
+  return (
+    <main className="recommendation-result-page">
+      <Header onHome={onHome} />
+      <div className="recommendation-result-shell">
+        <div className="result-intro">
+          <div className="commercial-badge">
+            <SlidersHorizontal size={17} />
+            Orientation selon vos réponses
+          </div>
+          <p className="eyebrow">Votre comparaison</p>
+          <h1>
+            {recommendation.type === "solution"
+              ? "Une option adaptée à votre besoin"
+              : recommendation.title}
+          </h1>
+          <p>
+            {recommendation.type === "solution"
+              ? "Celoria a rapproché votre organisation, votre volume et votre priorité."
+              : recommendation.description}
+          </p>
+        </div>
+
+        {recommendation.type === "solution" ? (
+          <>
+            <article className="solution-card">
+              <div className="solution-card-main">
+                <span className="solution-match">Correspond à votre besoin</span>
+                <h2>{recommendation.solution.name}</h2>
+                <strong>{recommendation.solution.label}</strong>
+                <p>{recommendation.solution.description}</p>
+                <div className="solution-check">
+                  <CircleHelp size={19} />
+                  <span>
+                    <b>À vérifier avant de choisir :</b> {recommendation.solution.check}
+                  </span>
+                </div>
+              </div>
+              <div className="solution-card-action">
+                <a
+                  href={recommendation.solution.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="primary-button solution-button"
+                  onClick={clickSolution}
+                >
+                  Découvrir {recommendation.solution.name}
+                  <ExternalLink size={18} />
+                </a>
+                <small>
+                  Suggestion commerciale facultative. Si un partenariat est actif, Celoria peut
+                  recevoir une commission en cas d’inscription. Le diagnostic reste inchangé.
+                </small>
+              </div>
+            </article>
+            <SolutionComparison selectedKey={recommendation.key} />
+          </>
+        ) : (
+          <article className="orientation-card">
+            {recommendation.script ? (
+              <>
+                <p>Question à transmettre :</p>
+                <blockquote>« {recommendation.script} »</blockquote>
+              </>
+            ) : (
+              <p>{recommendation.action}</p>
+            )}
+          </article>
+        )}
+
+        <div className="recommendation-bottom">
+          <a href={OFFICIAL_PLATFORM_LIST} target="_blank" rel="noreferrer">
+            Consulter la liste officielle des plateformes agréées
+            <ExternalLink size={16} />
+          </a>
+          <div>
+            <button className="secondary-button" onClick={onEdit}>
+              <ArrowLeft size={17} />
+              Modifier mes réponses
+            </button>
+            <button className="primary-button" onClick={() => onFinish(recommendation)}>
+              Terminer ma feuille de route
+              <ArrowRight size={18} />
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function FinalScreen({
+  regulatoryAnswers,
+  recommendation,
+  onEdit,
+  onRestart,
+  onSources,
+  onHome,
+}) {
+  const result = calculateResult(regulatoryAnswers);
+  const [shared, setShared] = useState(false);
+  const [feedback, setFeedback] = useState(null);
+
+  const share = async () => {
+    const data = {
+      title: "Celoria",
+      text: "Clarifiez vos obligations et trouvez une solution de facturation adaptée avec Celoria.",
+      url: window.location.href,
+    };
+    try {
+      if (navigator.share) await navigator.share(data);
+      else await navigator.clipboard.writeText(window.location.href);
+      setShared(true);
+      trackEvent("shared");
+    } catch {
+      setShared(false);
+    }
+  };
+
+  const priority =
+    recommendation?.type === "solution"
+      ? `Vérifier si ${recommendation.solution.name} correspond à vos besoins précis.`
+      : recommendation?.script
+        ? "Transmettre la question préparée à votre interlocuteur actuel."
+        : result.next;
+
+  return (
+    <main className="final-page">
+      <Header onHome={onHome} minimal />
+      <section className="final-card">
+        <div className="wizard-main-icon clear">
+          <Check size={39} />
+        </div>
+        <p className="eyebrow">Parcours terminé</p>
+        <h1>Votre feuille de route est prête</h1>
+        <div className="final-summary">
+          <div>
+            <span>Échéance principale</span>
+            <strong>{result.emissionDate}</strong>
+          </div>
+          <div>
+            <span>Action prioritaire</span>
+            <strong>{priority}</strong>
+          </div>
+          {recommendation?.type === "solution" && (
+            <div>
+              <span>Option identifiée</span>
+              <strong>{recommendation.solution.name}</strong>
+            </div>
+          )}
+        </div>
+        <div className="final-actions">
+          <button className="secondary-button" onClick={onEdit}>
+            Modifier mes réponses
+          </button>
+          <button className="secondary-button" onClick={share}>
+            <Share2 size={17} />
+            {shared ? "Lien copié" : "Partager à un collègue"}
+          </button>
+          <button className="text-button" onClick={onRestart}>
+            Recommencer
+          </button>
+        </div>
+        <div className="final-feedback">
+          <span>Cette orientation vous a-t-elle aidé ?</span>
+          {feedback ? (
+            <strong>
+              <Check size={15} /> Merci
+            </strong>
+          ) : (
+            <div>
+              <button onClick={() => setFeedback("yes")}>Oui</button>
+              <button onClick={() => setFeedback("improve")}>À améliorer</button>
+            </div>
+          )}
+        </div>
+        <button className="sources-inline" onClick={onSources}>
+          <ShieldCheck size={16} />
+          Sources officielles vérifiées le {VERIFIED_DATE}
+        </button>
+      </section>
+      <Footer onSources={onSources} />
+    </main>
   );
 }
 
 export default function Page() {
   const [view, setView] = useState("landing");
   const [answers, setAnswers] = useState(initialAnswers);
+  const [commercialAnswers, setCommercialAnswers] = useState(initialRecommendationAnswers);
   const [stepIndex, setStepIndex] = useState(0);
+  const [recommendationStep, setRecommendationStep] = useState(0);
+  const [selectedRecommendation, setSelectedRecommendation] = useState(null);
   const [sourcesOpen, setSourcesOpen] = useState(false);
+
+  useEffect(() => {
+    trackEvent("visitor");
+  }, []);
 
   const goHome = () => {
     setView("landing");
@@ -1277,6 +1644,7 @@ export default function Page() {
   const start = () => {
     setStepIndex(0);
     setView("questionnaire");
+    trackEvent("diagnostic_started");
     window.scrollTo(0, 0);
   };
 
@@ -1287,13 +1655,40 @@ export default function Page() {
 
   const showResult = () => {
     setView("result");
+    trackEvent("diagnostic_completed");
     window.scrollTo(0, 0);
   };
 
   const restart = () => {
     setAnswers(initialAnswers());
+    setCommercialAnswers(initialRecommendationAnswers());
     setStepIndex(0);
+    setRecommendationStep(0);
+    setSelectedRecommendation(null);
     setView("questionnaire");
+    window.scrollTo(0, 0);
+  };
+
+  const startRecommendation = () => {
+    setRecommendationStep(0);
+    setView("recommendation");
+    trackEvent("recommendation_requested");
+    window.scrollTo(0, 0);
+  };
+
+  const showRecommendation = (nextAnswers = commercialAnswers) => {
+    setCommercialAnswers(nextAnswers);
+    setView("recommendation-result");
+    trackEvent("recommendation_completed");
+    window.scrollTo(0, 0);
+  };
+
+  const finish = (recommendation = null) => {
+    setSelectedRecommendation(recommendation);
+    setView("final");
+    trackEvent("journey_completed", {
+      recommendation: recommendation?.key || recommendation?.type || "none",
+    });
     window.scrollTo(0, 0);
   };
 
@@ -1316,6 +1711,42 @@ export default function Page() {
       {view === "result" && (
         <Result
           answers={answers}
+          onEdit={() => {
+            setStepIndex(0);
+            setView("questionnaire");
+          }}
+          onRecommend={startRecommendation}
+          onFinish={() => finish(null)}
+          onHome={goHome}
+        />
+      )}
+      {view === "recommendation" && (
+        <RecommendationQuestionnaire
+          answers={commercialAnswers}
+          setAnswers={setCommercialAnswers}
+          stepIndex={recommendationStep}
+          setStepIndex={setRecommendationStep}
+          onComplete={showRecommendation}
+          onBack={() => setView("result")}
+          onHome={goHome}
+        />
+      )}
+      {view === "recommendation-result" && (
+        <RecommendationResult
+          regulatoryAnswers={answers}
+          commercialAnswers={commercialAnswers}
+          onFinish={finish}
+          onEdit={() => {
+            setRecommendationStep(0);
+            setView("recommendation");
+          }}
+          onHome={goHome}
+        />
+      )}
+      {view === "final" && (
+        <FinalScreen
+          regulatoryAnswers={answers}
+          recommendation={selectedRecommendation}
           onEdit={() => {
             setStepIndex(0);
             setView("questionnaire");

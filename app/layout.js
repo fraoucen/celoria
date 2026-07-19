@@ -3,9 +3,13 @@ import "./globals.css";
 export const runtime = "edge";
 
 export const metadata = {
-  title: "Celoria Facture — Votre feuille de route en 1 minute",
+  title: "Celoria — Trouvez votre solution de facturation",
   description:
-    "Comprenez simplement ce que la réforme de la facturation électronique change pour votre activité.",
+    "Clarifiez vos obligations et comparez vos besoins pour trouver une solution de facturation adaptée.",
+  icons: {
+    icon: "/celoria-icon.png",
+    apple: "/celoria-icon.png",
+  },
 };
 
 export default function RootLayout({ children }) {
