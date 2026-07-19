@@ -69,38 +69,40 @@ const worker = `
 const HTML = ${JSON.stringify(html)};
 const ASSETS = ${JSON.stringify(assets)};
 
-export default async function handleRequest(request) {
-  const url = new URL(request.url);
-  const isHead = request.method === "HEAD";
+export default {
+  async fetch(request) {
+    const url = new URL(request.url);
+    const isHead = request.method === "HEAD";
 
-  if (url.pathname === "/" || url.pathname === "/index.html") {
-    return new Response(isHead ? null : HTML, {
-      status: 200,
-      headers: {
-        "Content-Type": "text/html; charset=utf-8",
-        "Cache-Control": "no-cache",
-        "X-Content-Type-Options": "nosniff",
-      },
+    if (url.pathname === "/" || url.pathname === "/index.html") {
+      return new Response(isHead ? null : HTML, {
+        status: 200,
+        headers: {
+          "Content-Type": "text/html; charset=utf-8",
+          "Cache-Control": "no-cache",
+          "X-Content-Type-Options": "nosniff",
+        },
+      });
+    }
+
+    const asset = ASSETS[url.pathname];
+    if (asset) {
+      return new Response(isHead ? null : asset.body, {
+        status: 200,
+        headers: {
+          "Content-Type": asset.type,
+          "Cache-Control": "public, max-age=31536000, immutable",
+          "X-Content-Type-Options": "nosniff",
+        },
+      });
+    }
+
+    return new Response("Page introuvable", {
+      status: 404,
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
     });
-  }
-
-  const asset = ASSETS[url.pathname];
-  if (asset) {
-    return new Response(isHead ? null : asset.body, {
-      status: 200,
-      headers: {
-        "Content-Type": asset.type,
-        "Cache-Control": "public, max-age=31536000, immutable",
-        "X-Content-Type-Options": "nosniff",
-      },
-    });
-  }
-
-  return new Response("Page introuvable", {
-    status: 404,
-    headers: { "Content-Type": "text/plain; charset=utf-8" },
-  });
-}
+  },
+};
 `;
 
 writeFileSync(serverEntry, worker);
