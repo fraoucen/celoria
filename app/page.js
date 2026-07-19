@@ -493,10 +493,9 @@ function FranceMark() {
 function Brand() {
   return (
     <div className="brand" aria-label="Celoria">
-      <span className="brand-mark" aria-hidden="true">
-        <FileCheck2 size={21} strokeWidth={2.1} />
+      <span className="brand-logo-frame">
+        <img src="/celoria-logo.png" alt="Celoria" className="brand-logo" />
       </span>
-      <span>Celoria</span>
     </div>
   );
 }
