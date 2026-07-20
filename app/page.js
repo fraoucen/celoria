@@ -22,14 +22,22 @@ import {
   Globe2,
   Home,
   Landmark,
+  LockKeyhole,
   MapPin,
+  MessageSquareText,
+  Navigation,
   Package,
+  ReceiptText,
+  Rocket,
   Scale,
   Search,
   Share2,
   SlidersHorizontal,
   ShieldCheck,
   Sparkles,
+  Handshake,
+  Clock3,
+  UserRound,
   Users,
   WalletCards,
   Wrench,
@@ -705,15 +713,39 @@ function TrustLine({ compact = false }) {
   );
 }
 
-function Header({ onHome, minimal = false }) {
+function Header({ onHome, minimal = false, onStart, onSources }) {
+  const showPortalNavigation = !minimal && Boolean(onStart);
+  const scrollToSection = (id) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   return (
-    <header className={`site-header ${minimal ? "minimal" : ""}`}>
+    <header
+      className={`site-header ${minimal ? "minimal" : ""} ${showPortalNavigation ? "portal-header" : ""}`}
+    >
       <button className="brand-button" onClick={onHome} aria-label="Retour à l’accueil">
         <Brand />
       </button>
-      <div className="header-right">
-        {!minimal && <TrustLine compact />}
-      </div>
+      {showPortalNavigation ? (
+        <>
+          <nav className="portal-navigation" aria-label="Navigation principale">
+            <button type="button" onClick={() => scrollToSection("methode")}>
+              Notre méthode
+            </button>
+            <button type="button" onClick={onSources}>
+              Ressources
+            </button>
+            <button type="button" onClick={() => scrollToSection("a-propos")}>
+              À propos
+            </button>
+          </nav>
+          <button className="primary-button portal-header-button" onClick={() => scrollToSection("parcours")}>
+            Voir les parcours
+          </button>
+        </>
+      ) : (
+        <div className="header-right">{!minimal && <TrustLine compact />}</div>
+      )}
     </header>
   );
 }
@@ -790,101 +822,160 @@ function Footer({ onSources }) {
   );
 }
 
-function Landing({ onStart, onSources }) {
+function PortalFooter({ onSources }) {
   return (
-    <main className="landing">
-      <Header onHome={() => {}} />
-      <section className="hero">
-        <div className="hero-copy">
-          <div className="country-pill">
-            <SlidersHorizontal size={17} />
-            Recommandation personnalisée
-          </div>
+    <footer className="portal-footer" id="a-propos">
+      <div className="portal-footer-main">
+        <div className="portal-footer-brand">
+          <Brand />
+          <span>© {new Date().getFullYear()} Celoria</span>
+        </div>
+        <nav aria-label="Informations">
+          <button type="button" onClick={onSources}>
+            Ressources
+          </button>
+          <a href="mailto:contact@celoria.fr">Contact</a>
+          <button type="button" onClick={() => window.alert("Les mentions légales seront publiées avant l’ouverture commerciale.")}>
+            Mentions légales
+          </button>
+          <button type="button" onClick={() => window.alert("La politique de confidentialité sera publiée avant la collecte de données personnelles.")}>
+            Confidentialité
+          </button>
+        </nav>
+      </div>
+    </footer>
+  );
+}
+
+function Landing({ onStart, onSources }) {
+  const scrollToPaths = () => {
+    document.getElementById("parcours")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  return (
+    <main className="landing portal-landing">
+      <Header onHome={() => window.scrollTo({ top: 0, behavior: "smooth" })} onStart={onStart} onSources={onSources} />
+
+      <section className="portal-hero">
+        <div className="portal-hero-copy">
+          <span className="portal-free-badge">Service gratuit</span>
           <h1>
-            Trouvez la solution de facturation
-            <span> adaptée à votre entreprise.</span>
+            Une question
+            <br />
+            professionnelle <span>?</span>
+            <strong>On vous aide à y voir clair.</strong>
           </h1>
-          <p className="hero-lead">
-            Celoria clarifie d’abord vos obligations, puis compare vos besoins pour vous orienter
-            vers une solution réellement pertinente.
+          <p className="portal-hero-lead">
+            Des parcours gratuits et rapides pour comprendre votre situation et trouver la solution
+            adaptée.
           </p>
-          <div className="hero-actions">
-            <button className="primary-button hero-button" onClick={onStart}>
-              Comparer gratuitement
-              <ArrowRight size={20} />
-            </button>
-          </div>
-          <p className="hero-proof">6 étapes rapides · Sans inscription · Résultat immédiat</p>
-        </div>
 
-        <div className="hero-card" aria-label="Aperçu de la recommandation">
-          <div className="hero-card-top">
-            <div className="mini-brand">
-              <Search size={18} />
-              Votre orientation
-            </div>
-            <span className="ready-dot">Sur mesure</span>
-          </div>
-          <div className="timeline-preview">
-            <div className="timeline-row active">
-              <span className="timeline-icon">
-                <Check size={17} />
-              </span>
-              <div>
-                <small>Étape gratuite</small>
-                <strong>Vos obligations clarifiées</strong>
-              </div>
-            </div>
-            <div className="timeline-line" />
-            <div className="timeline-row">
-              <span className="timeline-icon">
-                <Scale size={17} />
-              </span>
-              <div>
-                <small>Comparaison</small>
-                <strong>Vos besoins analysés</strong>
-              </div>
-            </div>
-            <div className="timeline-line" />
-            <div className="timeline-row">
-              <span className="timeline-icon">
-                <ArrowRight size={17} />
-              </span>
-              <div>
-                <small>Votre résultat</small>
-                <strong>Une solution expliquée</strong>
-              </div>
-            </div>
-          </div>
-          <div className="verified-card">
-            <ShieldCheck size={20} />
+          <div className="portal-assurances" aria-label="Garanties du service">
             <div>
-              <strong>Diagnostic avant recommandation</strong>
-              <span>Le résultat réglementaire reste séparé de la comparaison.</span>
+              <span className="green"><ShieldCheck size={20} /></span>
+              <p>Orientation gratuite, vous restez libre.</p>
+            </div>
+            <div>
+              <span className="cyan"><MessageSquareText size={20} /></span>
+              <p>Aucun jargon nécessaire.</p>
+            </div>
+            <div>
+              <span className="violet"><LockKeyhole size={20} /></span>
+              <p>Sans inscription.</p>
             </div>
           </div>
+
+          <button className="primary-button portal-start-button" onClick={onStart}>
+            Commencer avec la facturation
+            <ArrowRight size={21} />
+          </button>
+          <p className="portal-duration">Environ 2 minutes <i /> Résultat immédiat</p>
+        </div>
+
+        <div className="portal-chooser" aria-labelledby="portal-chooser-title">
+          <h2 id="portal-chooser-title">Que souhaitez-vous clarifier aujourd’hui&nbsp;?</h2>
+          <p>Choisissez une option pour commencer simplement.</p>
+          <button className="portal-choice available" onClick={onStart}>
+            <span className="portal-choice-icon">
+              <ReceiptText size={36} />
+              <b>€</b>
+            </span>
+            <span className="portal-choice-copy">
+              <strong>Ma facturation électronique</strong>
+              <small>Comprendre mes obligations et trouver la solution adaptée.</small>
+            </span>
+            <ArrowRight size={29} />
+          </button>
+          <button className="portal-choice guidance" onClick={scrollToPaths}>
+            <span className="portal-choice-icon">
+              <Navigation size={38} />
+            </span>
+            <span className="portal-choice-copy">
+              <strong>Je ne sais pas par où commencer</strong>
+              <small>Nous vous aidons à identifier le parcours le plus adapté.</small>
+            </span>
+            <ArrowRight size={29} />
+          </button>
         </div>
       </section>
 
-      <section className="how-it-works compact-flow">
-        <div>
-          <span className="section-number">01</span>
-          <h2>Diagnostic gratuit</h2>
-          <p>Vos obligations et vos échéances sont clarifiées avant toute recommandation.</p>
-        </div>
-        <div>
-          <span className="section-number">02</span>
-          <h2>Besoin analysé</h2>
-          <p>Votre méthode actuelle, votre volume et votre besoin sont comparés.</p>
-        </div>
-        <div>
-          <span className="section-number">03</span>
-          <h2>Solution adaptée</h2>
-          <p>Une seule orientation expliquée, avec les alternatives officielles toujours accessibles.</p>
+      <section className="portal-paths" id="parcours">
+        <h2>Nos parcours</h2>
+        <div className="portal-path-grid">
+          <article className="portal-path-card active">
+            <div className="portal-path-icon">
+              <ReceiptText size={46} />
+              <span>€</span>
+            </div>
+            <div className="portal-path-content">
+              <div className="portal-path-title">
+                <h3>Facturation électronique</h3>
+                <span className="available-label">Disponible</span>
+              </div>
+              <p>Comprendre vos obligations et trouver une solution adaptée.</p>
+              <div className="portal-path-meta">
+                <span><UserRound size={16} /> Pour indépendants et entreprises</span>
+                <i />
+                <span><Clock3 size={16} /> Environ 2 minutes</span>
+              </div>
+              <button type="button" onClick={onStart}>
+                Découvrir ce parcours
+                <ArrowRight size={18} />
+              </button>
+            </div>
+          </article>
+
+          <article className="portal-path-card upcoming" aria-label="Nouveaux parcours à venir">
+            <div className="portal-path-icon">
+              <Rocket size={44} />
+            </div>
+            <div className="portal-path-content">
+              <div className="portal-path-title">
+                <h3>De nouveaux parcours arrivent progressivement</h3>
+                <span className="soon-label">Bientôt</span>
+              </div>
+              <p>D’autres sujets professionnels seront ajoutés au fil du temps.</p>
+            </div>
+          </article>
         </div>
       </section>
 
-      <Footer onSources={onSources} />
+      <section className="portal-method-strip" id="methode" aria-label="Nos engagements">
+        <div>
+          <ShieldCheck size={25} />
+          <span>Sources officielles et datées</span>
+        </div>
+        <div>
+          <Search size={25} />
+          <span>Des recommandations claires et compréhensibles</span>
+        </div>
+        <div>
+          <Handshake size={25} />
+          <span>Les relations commerciales sont clairement indiquées</span>
+        </div>
+      </section>
+
+      <PortalFooter onSources={onSources} />
     </main>
   );
 }
