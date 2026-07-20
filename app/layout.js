@@ -3,9 +3,9 @@ import "./globals.css";
 export const runtime = "edge";
 
 export const metadata = {
-  title: "Celoria — Trouvez votre solution de facturation",
+  title: "Celoria — Des parcours clairs pour vos décisions professionnelles",
   description:
-    "Clarifiez vos obligations et comparez vos besoins pour trouver une solution de facturation adaptée.",
+    "Des parcours gratuits et rapides pour comprendre votre situation et trouver une solution adaptée.",
   icons: {
     icon: "/celoria-icon.png",
     apple: "/celoria-icon.png",
